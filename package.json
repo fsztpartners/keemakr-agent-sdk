@@ -1,6 +1,6 @@
 {
   "name": "@keemakr/agent-sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The floor for keemakr marketplace agents: verify the capability grant and reach tenant connections (and, soon, memory and shared tools) through keemakr-core — without holding raw secrets or resolving the tenant yourself.",
   "license": "MIT",
   "type": "module",

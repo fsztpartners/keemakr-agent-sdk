@@ -63,17 +63,19 @@ function coreBaseUrl(): string {
 async function capabilityFetch(
   grant: GrantInfo,
   path: string,
-  body: unknown,
+  body?: unknown,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'POST',
 ): Promise<unknown> {
   const url = `${coreBaseUrl()}/api/capability/${path}`;
+  const hasBody = method !== 'GET' && method !== 'DELETE';
   const res = await fetch(url, {
-    method: 'POST',
+    method,
     headers: {
-      'content-type': 'application/json',
+      ...(hasBody ? { 'content-type': 'application/json' } : {}),
       authorization: `Bearer ${grant.token}`,
       ...(grant.traceId ? { 'x-keemakr-trace-id': grant.traceId } : {}),
     },
-    body: JSON.stringify(body ?? {}),
+    ...(hasBody ? { body: JSON.stringify(body ?? {}) } : {}),
   });
   const json = (await res.json().catch(() => ({}))) as {
     ok?: boolean;
@@ -95,6 +97,35 @@ export interface KeeConnection {
   token(): Promise<{ access_token: string; account_label: string | null }>;
 }
 
+/** One stored memory entry. */
+export interface MemoryEntry {
+  namespace: string;
+  key: string;
+  value: unknown;
+  written_by_agent: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Cross-session, tenant-owned key-value memory. TENANT-SHARED: any of the
+ * tenant's installed agents can read/write any namespace. For per-session working
+ * memory use eve's defineState instead — this is for state that must outlive the
+ * session. Requires the `memory:rw` scope.
+ */
+export interface KeeMemory {
+  /** Read a key's value, or null if absent. */
+  get(namespace: string, key: string): Promise<unknown | null>;
+  /** Read the full entry (value + provenance + timestamps), or null. */
+  getEntry(namespace: string, key: string): Promise<MemoryEntry | null>;
+  /** Write a key. Returns the stored entry. */
+  set(namespace: string, key: string, value: unknown): Promise<MemoryEntry>;
+  /** Delete a key. Returns whether it existed. */
+  delete(namespace: string, key: string): Promise<boolean>;
+  /** List every entry in a namespace (tenant-wide). */
+  list(namespace: string): Promise<MemoryEntry[]>;
+}
+
 export interface Kee {
   tenantId: string;
   scopes: string[];
@@ -102,6 +133,7 @@ export interface Kee {
     /** Explicit accessor (equivalent to kee.connections[provider]). */
     get(provider: string): KeeConnection;
   };
+  memory: KeeMemory;
 }
 
 /**
@@ -139,5 +171,54 @@ export function useKee(ctx: KeeContext): Kee {
     },
   );
 
-  return { tenantId: grant.tenantId, scopes: grant.scopes, connections };
+  const enc = encodeURIComponent;
+  const memory: KeeMemory = {
+    async getEntry(namespace, key) {
+      try {
+        const json = (await capabilityFetch(
+          grant,
+          `memory/${enc(namespace)}/${enc(key)}`,
+          undefined,
+          'GET',
+        )) as { entry?: MemoryEntry };
+        return json.entry ?? null;
+      } catch (e) {
+        if ((e as KeeError).status === 404) return null;
+        throw e;
+      }
+    },
+    async get(namespace, key) {
+      const entry = await this.getEntry(namespace, key);
+      return entry ? entry.value : null;
+    },
+    async set(namespace, key, value) {
+      const json = (await capabilityFetch(
+        grant,
+        `memory/${enc(namespace)}/${enc(key)}`,
+        { value },
+        'PUT',
+      )) as { entry: MemoryEntry };
+      return json.entry;
+    },
+    async delete(namespace, key) {
+      const json = (await capabilityFetch(
+        grant,
+        `memory/${enc(namespace)}/${enc(key)}`,
+        undefined,
+        'DELETE',
+      )) as { deleted: boolean };
+      return !!json.deleted;
+    },
+    async list(namespace) {
+      const json = (await capabilityFetch(
+        grant,
+        `memory/${enc(namespace)}`,
+        undefined,
+        'GET',
+      )) as { entries?: MemoryEntry[] };
+      return json.entries ?? [];
+    },
+  };
+
+  return { tenantId: grant.tenantId, scopes: grant.scopes, connections, memory };
 }
