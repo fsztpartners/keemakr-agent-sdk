@@ -17,5 +17,7 @@ export {
   type KeeContext,
   type KeeError,
   type KeeMemory,
+  type KeeTools,
   type MemoryEntry,
 } from './client.js';
+export { keemakrToolDirectory } from './tool-directory.js';

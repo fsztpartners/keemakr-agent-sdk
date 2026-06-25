@@ -1,7 +1,7 @@
 {
   "name": "@keemakr/agent-sdk",
-  "version": "0.2.0",
-  "description": "The floor for keemakr marketplace agents: verify the capability grant and reach tenant connections (and, soon, memory and shared tools) through keemakr-core — without holding raw secrets or resolving the tenant yourself.",
+  "version": "0.3.0",
+  "description": "The floor for keemakr marketplace agents: verify the capability grant and reach tenant connections, memory, and shared platform tools through keemakr-core — without holding raw secrets or resolving the tenant yourself.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -10,6 +10,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./tool-directory": {
+      "types": "./dist/tool-directory.d.ts",
+      "import": "./dist/tool-directory.js"
     }
   },
   "files": [

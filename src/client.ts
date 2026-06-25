@@ -126,6 +126,14 @@ export interface KeeMemory {
   list(namespace: string): Promise<MemoryEntry[]>;
 }
 
+/** Platform registry tools (Shape B) — defined in core, run server-side. */
+export interface KeeTools {
+  /** List the registry tools this grant is entitled to. */
+  list(): Promise<Array<{ name: string; description: string; requiredScope?: string }>>;
+  /** Run a registry tool by name and return its result. Requires `tools:run`. */
+  run(name: string, args?: Record<string, unknown>): Promise<unknown>;
+}
+
 export interface Kee {
   tenantId: string;
   scopes: string[];
@@ -134,6 +142,7 @@ export interface Kee {
     get(provider: string): KeeConnection;
   };
   memory: KeeMemory;
+  tools: KeeTools;
 }
 
 /**
@@ -220,5 +229,20 @@ export function useKee(ctx: KeeContext): Kee {
     },
   };
 
-  return { tenantId: grant.tenantId, scopes: grant.scopes, connections, memory };
+  const tools: KeeTools = {
+    async list() {
+      const json = (await capabilityFetch(grant, 'tools', undefined, 'GET')) as {
+        tools?: Array<{ name: string; description: string; requiredScope?: string }>;
+      };
+      return json.tools ?? [];
+    },
+    async run(name, args) {
+      const json = (await capabilityFetch(grant, `tools/${encodeURIComponent(name)}`, {
+        args: args ?? {},
+      })) as { result?: unknown };
+      return json.result;
+    },
+  };
+
+  return { tenantId: grant.tenantId, scopes: grant.scopes, connections, memory, tools };
 }
