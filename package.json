@@ -1,0 +1,44 @@
+{
+  "name": "@keemakr/agent-sdk",
+  "version": "0.1.0",
+  "description": "The floor for keemakr marketplace agents: verify the capability grant and reach tenant connections (and, soon, memory and shared tools) through keemakr-core — without holding raw secrets or resolving the tenant yourself.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fsztpartners/keemakr-agent-sdk.git"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "eve": "0.13.0",
+    "jose": "^6.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "eve": "0.13.0",
+    "jose": "^6.2.3",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20.9"
+  }
+}
