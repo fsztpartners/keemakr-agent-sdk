@@ -82,6 +82,25 @@ await kee.connections.get("hunter").call("email-finder", { ... }); // equivalent
 const { access_token } = await kee.connections.hunter.token();
 ```
 
+### Memory (cross-session, tenant-shared)
+
+```ts
+await kee.memory.set("prefs", "tone", { tone: "formal" });
+await kee.memory.get("prefs", "tone");          // → { tone: "formal" }
+await kee.memory.list("prefs");                  // → entries in the namespace
+await kee.memory.delete("prefs", "tone");
+// Semantic search by meaning (embeddings):
+const hits = await kee.memory.search("how should I speak to the user?", { limit: 5 });
+// → [{ namespace, key, value, score, … }]  (score 0–1, nearest first)
+```
+
+### Platform tools
+
+```ts
+await kee.tools.list();                 // tools this grant is entitled to
+await kee.tools.run("current-time");    // run one in keemakr-core
+```
+
 A call whose grant lacks the required scope returns a `KeeError` with `status: 403`; an expired/invalid grant returns `status: 401`.
 
 ## Security model

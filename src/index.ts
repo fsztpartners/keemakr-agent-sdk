@@ -19,5 +19,6 @@ export {
   type KeeMemory,
   type KeeTools,
   type MemoryEntry,
+  type MemorySearchHit,
 } from './client.js';
 export { keemakrToolDirectory } from './tool-directory.js';

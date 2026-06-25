@@ -113,6 +113,12 @@ export interface MemoryEntry {
  * memory use eve's defineState instead — this is for state that must outlive the
  * session. Requires the `memory:rw` scope.
  */
+/** A semantic-search hit — a memory entry with its similarity score. */
+export interface MemorySearchHit extends MemoryEntry {
+  /** Cosine similarity in [0,1] (1 = identical). */
+  score: number;
+}
+
 export interface KeeMemory {
   /** Read a key's value, or null if absent. */
   get(namespace: string, key: string): Promise<unknown | null>;
@@ -124,6 +130,11 @@ export interface KeeMemory {
   delete(namespace: string, key: string): Promise<boolean>;
   /** List every entry in a namespace (tenant-wide). */
   list(namespace: string): Promise<MemoryEntry[]>;
+  /** Semantic search by meaning. Optionally scope to a namespace. */
+  search(
+    query: string,
+    opts?: { namespace?: string; limit?: number },
+  ): Promise<MemorySearchHit[]>;
 }
 
 /** Platform registry tools (Shape B) — defined in core, run server-side. */
@@ -226,6 +237,14 @@ export function useKee(ctx: KeeContext): Kee {
         'GET',
       )) as { entries?: MemoryEntry[] };
       return json.entries ?? [];
+    },
+    async search(query, opts) {
+      const json = (await capabilityFetch(grant, 'memory/search', {
+        query,
+        namespace: opts?.namespace,
+        limit: opts?.limit,
+      })) as { hits?: MemorySearchHit[] };
+      return json.hits ?? [];
     },
   };
 
