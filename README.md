@@ -82,6 +82,28 @@ await kee.connections.get("hunter").call("email-finder", { ... }); // equivalent
 const { access_token } = await kee.connections.hunter.token();
 ```
 
+### Discover connectors + operations
+
+`@keemakr/agent-sdk/connectors` ships a generated, typed manifest of every connector keemakr-core exposes — provider slugs, `maturity`, and each operation's name + JSON-Schema arg contract. Use it to discover what's callable (and get autocomplete on provider + op names) **without** scanning a core checkout or hitting a running instance. It's **metadata only** — no credentials.
+
+```ts
+import { connectors, opNames, isReady } from "@keemakr/agent-sdk/connectors";
+
+opNames("hunter");                                  // → ["email-finder"]
+connectors.hunter.ops["email-finder"].inputSchema;  // JSON Schema for the args
+isReady("meta");                                     // false while a connector is coming_soon
+connectors.meta.maturity;                            // "coming_soon" | "ready"
+```
+
+A `coming_soon` connector is declarable in your `entry.json` `dependencies` today; its operations start callable (and `isReady` flips to `true`) once core ships them — **no change to your agent**.
+
+**Refresh the manifest** after core ships new connectors/operations (it's a committed snapshot of `GET /api/connections/catalog`):
+
+```bash
+curl -s "$KEE_CORE_URL/api/connections/catalog" > src/connectors.snapshot.json
+npm run gen:connectors    # or: npm run build (runs gen first)
+```
+
 ### Memory (cross-session, tenant-shared)
 
 ```ts
