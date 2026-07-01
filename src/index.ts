@@ -10,6 +10,7 @@
 //   const r = await kee.connections.hunter.call('email-finder', { domain, first_name, last_name });
 
 export { grantAuth } from './grant-auth.js';
+export { verifyGrant, type VerifiedGrant } from './verify-grant.js';
 export {
   useKee,
   type Kee,
