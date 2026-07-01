@@ -1,6 +1,6 @@
 {
   "name": "@keemakr/agent-sdk",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "The floor for keemakr marketplace agents: verify the capability grant and reach tenant connections, memory, and shared platform tools through keemakr-core — without holding raw secrets or resolving the tenant yourself.",
   "license": "MIT",
   "type": "module",
@@ -14,6 +14,10 @@
     "./tool-directory": {
       "types": "./dist/tool-directory.d.ts",
       "import": "./dist/tool-directory.js"
+    },
+    "./connectors": {
+      "types": "./dist/connectors.d.ts",
+      "import": "./dist/connectors.js"
     }
   },
   "files": [
@@ -28,8 +32,9 @@
     "url": "git+https://github.com/fsztpartners/keemakr-agent-sdk.git"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc --noEmit",
+    "gen:connectors": "node scripts/gen-connectors.mjs",
+    "build": "npm run gen:connectors && tsc -p tsconfig.json",
+    "typecheck": "npm run gen:connectors && tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {

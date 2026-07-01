@@ -1,3 +1,7 @@
 node_modules/
 dist/
 *.tsbuildinfo
+
+# Codegen output — regenerated from src/connectors.snapshot.json by
+# scripts/gen-connectors.mjs (runs in the build). The snapshot IS committed.
+src/connectors.generated.ts
