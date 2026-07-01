@@ -125,12 +125,28 @@ await kee.tools.run("current-time");    // run one in keemakr-core
 
 A call whose grant lacks the required scope returns a `KeeError` with `status: 403`; an expired/invalid grant returns `status: 401`.
 
-## Security model
+## Autonomous / scheduled runs
 
-- **Tenant always comes from the verified grant**, resolved server-side. Never pass a tenant id from tool input.
-- **On the proxy path, credentials never leave keemakr-core.** You send operation args; core runs the third-party request with the tenant's credential and returns only the result.
-- **The token path is opt-in and scope-gated** (`conn:<provider>:token`), declared per dependency in your `entry.json` (`"access": "token"`).
+A cron/scheduled turn has no operator session, so it gets no session grant. keemakr-core can mint a **machine grant** for it (gated on the tenant's per-install `unattended_consent`). If your remote runs **outside** an eve channel, verify that grant directly:
+
+```ts
+import { verifyGrant } from "@keemakr/agent-sdk";
+
+const claims = await verifyGrant(grantToken, { audience: process.env.KEE_AGENT_AUDIENCE });
+if (!claims) throw new Error("invalid or expired grant");
+// claims.tenantId, claims.scopes, claims.aud, claims.exp
+```
+
+Inside an eve channel, `grantAuth()` already accepts machine grants (same token shape) — no extra work.
+
+## Credential & model contract
+
+- **Tenant/service credentials live in keemakr-core**, reached only via the proxy — the credential never crosses the wire. Tenant is always the verified grant, resolved server-side; never pass a tenant id from tool input.
+- **The token path is opt-in and scope-gated** (`conn:<provider>:token`), declared per dependency in `entry.json` (`"access": "token"`).
+- **You MAY hold your own model key.** There is no platform model gateway today, so an agent routing its own LLM calls (its own Anthropic/AI-Gateway key) is expected and fine — that is *not* a credential leak. A leak is a *tenant/service* credential read in agent code.
 - Every capability call re-verifies the grant and enforces scope on the server.
+
+Full contract: keemakr-core `docs/CONNECTOR-CONTRACT.md`.
 
 ## License
 
