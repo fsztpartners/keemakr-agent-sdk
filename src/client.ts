@@ -95,6 +95,8 @@ export interface KeeConnection {
   call(op: string, args?: Record<string, unknown>): Promise<unknown>;
   /** Request a short-lived scoped token (opt-in; requires the conn:<p>:token scope). */
   token(): Promise<{ access_token: string; account_label: string | null }>;
+  /** Pin subsequent calls to one tenant-scoped connected account row. */
+  account(connectionId: string): KeeConnection;
 }
 
 /** One stored memory entry. */
@@ -163,19 +165,25 @@ export interface Kee {
 export function useKee(ctx: KeeContext): Kee {
   const grant = readGrant(ctx);
 
-  const connectionFor = (provider: string): KeeConnection => ({
+  const connectionFor = (provider: string, connectionId?: string): KeeConnection => ({
     async call(op, args) {
       const json = (await capabilityFetch(grant, `conn/${provider}/${op}`, {
+        ...(connectionId ? { connection_id: connectionId } : {}),
         args: args ?? {},
       })) as { result?: unknown };
       return json.result;
     },
     async token() {
-      const json = (await capabilityFetch(grant, `conn/${provider}/token`, {})) as {
+      const json = (await capabilityFetch(grant, `conn/${provider}/token`, {
+        ...(connectionId ? { connection_id: connectionId } : {}),
+      })) as {
         access_token: string;
         account_label: string | null;
       };
       return { access_token: json.access_token, account_label: json.account_label };
+    },
+    account(accountId) {
+      return connectionFor(provider, accountId);
     },
   });
 
