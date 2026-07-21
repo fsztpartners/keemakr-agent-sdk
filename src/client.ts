@@ -183,7 +183,11 @@ export function useKee(ctx: KeeContext): Kee {
       return { access_token: json.access_token, account_label: json.account_label };
     },
     account(accountId) {
-      return connectionFor(provider, accountId);
+      const normalizedAccountId = accountId.trim();
+      if (!normalizedAccountId) {
+        throw new TypeError('connectionId must not be empty');
+      }
+      return connectionFor(provider, normalizedAccountId);
     },
   });
 
